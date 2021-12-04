@@ -5,6 +5,16 @@ $ docker-compose build
 $ docker-compose up -d
 ```
 
+Bring down containers and volumes
+```bash
+$ docker-compose down -v
+```
+
+Run production docker
+```bash
+$ docker-compose -f docker-compose.prod.yml up -d --build
+```
+
 Check docker logs:
 ```bash
 docker-compose logs -f
@@ -35,3 +45,7 @@ $ docker volume inspect fastapi-docker-traefik_postgres_data
 - Uses SQLAlchemy for creating tables & queries
 - Uses databases for async execution of queries
 - pydantic for model validation
+
+## production docker file
+- The prod docker file uvicorn-gunicorn uses gunicorn to manage uvicorn processes
+- utilizes a `prestart.sh` script which can be used to wait for db to start
