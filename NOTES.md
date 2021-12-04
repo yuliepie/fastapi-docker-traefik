@@ -1,3 +1,4 @@
+## Docker commands
 Build & run the Docker image:
 ```bash
 $ docker-compose build
@@ -49,3 +50,14 @@ $ docker volume inspect fastapi-docker-traefik_postgres_data
 ## production docker file
 - The prod docker file uvicorn-gunicorn uses gunicorn to manage uvicorn processes
 - utilizes a `prestart.sh` script which can be used to wait for db to start
+
+## Traefik architecture
+-  Traefik is a reverse proxy service deployed in a container
+-  Redirects web requests to appropriate services
+### Flow
+1. Client --> VM:8008
+   1. Goes to Traefik:80 - web request processor
+   2. Routes to appropriate service according to rules
+   3. Here, requests for domain `fastapi.localhost` will be routed to fastapi API service
+2. Client --> VM:8081
+   1. Goes to Traefik:8080 - dashboard

@@ -6,12 +6,17 @@ services:
     command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn app.main:app --host 0.0.0.0' # run app when postgres is up
     volumes:
       - .:/app
-    ports:
-      - 8008:8000
+    expose:
+      - 8000 # expose ports for Traefik
+    # ports:
+    #   - 8008:8000
     environment:
       - DATABASE_URL=postgresql://fastapi_traefik:fastapi_traefik@db:5432/fastapi_traefik
     depends_on:
       - db
+    labels:
+      - "traefik.enable=true" # Traefik
+      - "traefik.http.routers.fastapi.rule=Host(`fastapi.localhost`)" # requests starting with fastapi.localhost will be redirected to fastapi service
   db:
     image: postgres:13-alpine
     volumes:
@@ -22,6 +27,15 @@ services:
       - POSTGRES_USER=fastapi_traefik
       - POSTGRES_PASSWORD=fastapi_traefik
       - POSTGRES_DB=fastapi_traefik
+  # Container for traefik proxy
+  traefik:
+    image: traefik:v2.2
+    ports:
+      - 8008:80 # fastapi.localhost:8008
+      - 8081:8080
+    volumes:
+      - "./traefik.dev.toml:/etc/traefik/traefik.toml" # maps traefik config file between local & container
+      - "/var/run/docker.sock:/var/run/docker.sock:ro" # enables traefik to discover other containers
 
 volumes:
   postgres_data:
