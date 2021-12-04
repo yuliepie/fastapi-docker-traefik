@@ -5,12 +5,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
-    ports:
-      - 8009:80
+    # ports:
+    #   - 8009:80
+    expose:
+      - 80 # Port for Traefik access
     environment:
       - DATABASE_URL=postgresql://fastapi_traefik_prod:fastapi_traefik_prod@db:5432/fastapi_traefik_prod
     depends_on:
       - db
+    labels:  # new
+      - "traefik.enable=true" # Traefik
+      - "traefik.http.routers.fastapi.rule=Host(`fastapi-traefik.your-domain.com`)" # Routing rule
+      - "traefik.http.routers.fastapi.tls=true" # Enable HTTPS
+      - "traefik.http.routers.fastapi.tls.certresolver=letsencrypt" # Set certificate issuer as Let's Encrypt
   db:
     image: postgres:13-alpine
     volumes:
@@ -21,6 +28,24 @@ services:
       - POSTGRES_USER=fastapi_traefik_prod
       - POSTGRES_PASSWORD=fastapi_traefik_prod
       - POSTGRES_DB=fastapi_traefik_prod
-
+  traefik:  # new
+    build:
+      context: .
+      dockerfile: Dockerfile.traefik
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik-public-certificates:/certificates"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`dashboard-fastapi-traefik.your-domain.com`) && (PathPrefix(`/`)" # Dashboard can be accessed at $Host/dashboard/
+      - "traefik.http.routers.dashboard.tls=true" # Enable HTTPS
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt" # Let's Encrypt
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=auth" # HTTP BasicAuth middleware
+      - "traefik.http.middlewares.auth.basicauth.users=testuser:$$apr1$$jIKW.bdS$$eKXe4Lxjgy/rH65wP1iQe1" # Username & hashed password for login
 volumes:
   postgres_data_prod:
+  traefik-public-certificates: # Volume for certificates

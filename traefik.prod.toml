@@ -1,0 +1,34 @@
+# After setting up VM and a domain name
+# entry point for HTTP application = 80
+# entry point for HTTPS: 443
+# Redirect all insecure requests to secure port
+
+[entryPoints]
+  [entryPoints.web]
+    address = ":80" 
+  [entryPoints.web.http]
+    [entryPoints.web.http.redirections]
+      [entryPoints.web.http.redirections.entryPoint]
+        to = "websecure"
+        scheme = "https"
+
+  [entryPoints.websecure]
+    address = ":443"
+
+[accessLog]
+
+[api]
+dashboard = true
+
+[providers]
+  [providers.docker]
+    exposedByDefault = false
+
+# Let's Encrypt config:
+# certificate storage path 
+# verification type: HTTP Challenge
+[certificatesResolvers.letsencrypt.acme]
+  email = "your@email.com"
+  storage = "/certificates/acme.json"
+  [certificatesResolvers.letsencrypt.acme.httpChallenge]
+    entryPoint = "web"
